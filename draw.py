@@ -1,6 +1,7 @@
 # draw.py — draws entry.png: a 1024x1024 world-news infographic for
 # Thursday 19 November 2026. Four stories, 2x2 grid, flat PIL icons.
 from PIL import Image, ImageDraw, ImageFont
+import hashlib
 import math
 
 W, H = 1024, 1024
@@ -181,6 +182,30 @@ def draw_panel(draw, x, y, w, h, idx):
         draw.text((x + pad, by), ln, font=bf, fill=(50, 50, 50))
         by += 30
 
+
+def verify_output(path):
+    """Check the written PNG: size, dimensions and digest."""
+    import os
+    size = os.path.getsize(path)
+    assert size <= 1048576, f"{path} is {size} bytes, over 1 MiB"
+    with Image.open(path) as im:
+        assert im.size == (1024, 1024), f"{path} is {im.size}, not 1024x1024"
+        mode = im.mode
+    with open(path, "rb") as fh:
+        digest = hashlib.sha256(fh.read()).hexdigest()
+    print(f"verified {path}: {size} bytes, 1024x1024, mode {mode}")
+    print(f"sha256 {digest}")
+
+
+def describe():
+    """Print the four story headlines and the panel count."""
+    print("stories for THURSDAY 19 NOVEMBER 2026:")
+    print(f"panels: {len(STORIES)}")
+    for i, (tag, _accent, _icon, headline, _body) in enumerate(STORIES, 1):
+        print(f"  {i}. {tag}: {headline}")
+    print("layout: 2x2 grid, 1024x1024")
+
+
 def main():
     img = Image.new("RGB", (W, H), (255, 255, 255))
     draw = ImageDraw.Draw(img)
@@ -201,6 +226,8 @@ def main():
     center(draw, W // 2, 990, "Sources: major wire and newspaper roundups, 19 Nov 2026",
            font(REG, 20), (200, 210, 220))
     img.save("entry.png", optimize=True)
+    verify_output("entry.png")
+    describe()
     print("saved entry.png", img.size)
 
 if __name__ == "__main__":
